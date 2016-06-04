@@ -1,0 +1,67 @@
+---
+title: "Prediction Assignment Writeup"
+output: 
+  html_document:
+    keep_md: true
+---
+
+## Data
+
+The data for this project come from this source: 
+http://groupware.les.inf.puc-rio.br/har.
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+Packages installed are:
+#install.packages("caret")
+#install.packages("randomForest")
+
+## Loading the data
+```{r}
+library(caret)
+library(randomForest)
+
+training_data <- read.csv("pml-training.csv", na.strings=c("NA",""), strip.white=T)
+testing_data <- read.csv("pml-testing.csv", na.strings=c("NA",""), strip.white=T)
+```
+## Clean the Data
+
+Data is cleaned by removing the columns that contains NA and features that are not in testing dataset. We also remove the first 7 features since they are not numeric.
+```{r}
+features <- names(testing_data[,colSums(is.na(testing_data)) == 0])[8:59]
+training_data <- training_data[,c(features,"classe")]
+testing_data <- testing_data[,c(features,"problem_id")]
+
+```
+## Partitioning the dataset
+```{r}
+set.seed(12345)
+
+inTrain <- createDataPartition(training_data$classe, p=0.6, list=FALSE)
+training <- training_data[inTrain,]
+testing <- training_data[-inTrain,]
+```
+## Building the Random Forest Model
+```{r}
+set.seed(12345) 
+modelRandomForest <- randomForest(classe ~ ., data = training, ntree = 1000)
+predictionRF <- predict(modelRandomForest, testing_data, type = "class")
+```
+## Predicting on the  Data
+```{r}
+predictonTrainData <- predict(modelRandomForest, newdata=training)
+confusionMatrix(predictonTrainData,training$classe)
+
+
+predictonTestData <- predict(modelRandomForest, newdata=testing)
+confusionMatrix(predictonTestData,testing$classe)
+```
+
+## Conclusion
+
+From the result of the confusion matrix , we can conclude that the  Random Forest model is very accurate, about 99%.. Because of that we could expect nearly all of the submitted test cases to be correct. 
+
